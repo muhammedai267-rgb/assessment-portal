@@ -13,7 +13,6 @@
         
         :root {
             --brand-navy: #0f172a;
-            --brand-accent: #2563eb;
         }
 
         body { 
@@ -25,19 +24,16 @@
             font-family: 'Crimson Pro', serif;
         }
 
-        select { 
-            appearance: none; 
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
-            background-repeat: no-repeat; 
-            background-position: right 1rem center; 
-            background-size: 1em; 
-        }
-
         .glass-panel {
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(226, 232, 240, 0.8);
         }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="text-slate-900">
@@ -110,52 +106,60 @@
                         setStudentClass(student.studentClass);
                         setView('dashboard');
                     } else {
-                        alert("Invalid Credentials. Please check your Admission Number.");
+                        alert("Academic records not found. Please verify your Admission Number.");
                     }
                     setLoading(false);
-                }, 800);
+                }, 600);
+            };
+
+            const handleLogout = () => {
+                setView('login');
+                setAdmissionNo('');
+                setStudentClass('');
+                setActiveModule(null);
             };
 
             return (
-                <div className="min-h-screen flex flex-col font-sans">
-                    {/* Academic Header */}
-                    <nav className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                        <div className="flex items-center gap-4 cursor-pointer" onClick={() => {if(view!=='quiz' && view!=='external') setView('login');}}>
-                            <div className="bg-slate-900 p-2.5 rounded shadow-sm">
+                <div className="min-h-screen flex flex-col font-sans bg-slate-50">
+                    {/* Professional Navbar */}
+                    <nav className="bg-white border-b border-slate-200 px-6 md:px-12 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+                        <div className="flex items-center gap-4 cursor-pointer" onClick={() => (view !== 'quiz' && view !== 'external') && setView('login')}>
+                            <div className="bg-slate-900 p-2 rounded shadow-sm">
                                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                             </div>
-                            <div>
-                                <h1 className="text-lg font-bold tracking-tight text-slate-900 uppercase">Academic Portal</h1>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] leading-none">Institutional Excellence</p>
+                            <div className="hidden sm:block">
+                                <h1 className="text-sm font-black tracking-widest text-slate-900 uppercase">Academic Portal</h1>
+                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.3em] leading-none">Intelligence Systems</p>
                             </div>
                         </div>
+
                         {view !== 'login' && view !== 'admin-login' && (
-                            <div className="flex items-center gap-8">
+                            <div className="flex items-center gap-4 md:gap-8">
                                 {studentClass && view !== 'quiz' && view !== 'external' && (
-                                    <div className="text-right hidden sm:block border-r border-slate-200 pr-8">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Session Active</p>
-                                        <p className="text-sm font-semibold text-slate-700">Class {studentClass} | {admissionNo.toUpperCase()}</p>
+                                    <div className="text-right hidden sm:block">
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Active Level</p>
+                                        <p className="text-xs font-bold text-slate-700">Class {studentClass} | {admissionNo.toUpperCase()}</p>
                                     </div>
                                 )}
-                                <button onClick={() => {setView('login'); setAdmissionNo(''); setStudentClass('');}} className="text-xs font-bold text-slate-500 hover:text-red-600 transition-colors uppercase tracking-widest">Sign Out</button>
+                                <button onClick={handleLogout} className="px-4 py-2 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all uppercase tracking-widest">Sign Out</button>
                             </div>
                         )}
                     </nav>
 
-                    <main className="flex-1 flex flex-col p-6 md:p-12 max-w-7xl mx-auto w-full">
+                    <main className="flex-1 flex flex-col p-4 md:p-8 max-w-6xl mx-auto w-full">
                         {view === 'login' && (
-                            <div className="max-w-md w-full mx-auto my-auto space-y-10 py-12">
+                            <div className="max-w-md w-full mx-auto my-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                                 <div className="text-center space-y-2">
-                                    <h2 className="serif-title text-4xl text-slate-900">Student Access</h2>
-                                    <p className="text-slate-500 text-sm">Please verify your identity using your institutional credentials.</p>
+                                    <h2 className="serif-title text-5xl text-slate-900">Student Portal</h2>
+                                    <p className="text-slate-500 text-sm font-medium">Verified academic access portal.</p>
                                 </div>
-                                <div className="bg-white p-10 rounded-xl border border-slate-200 shadow-xl shadow-slate-200/40">
+                                <div className="bg-white p-10 rounded-2xl border border-slate-200 shadow-2xl shadow-slate-200/50">
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block text-center">Admission Number</label>
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 block text-center">Institutional ID</label>
                                             <input 
-                                                className="w-full bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 p-4 rounded-lg outline-none font-medium text-lg transition-all text-center uppercase" 
-                                                placeholder="e.g. ADM-2024-01"
+                                                className="w-full bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 p-5 rounded-xl outline-none font-bold text-xl transition-all text-center uppercase tracking-widest" 
+                                                placeholder="ADM-000-00"
                                                 value={admissionNo}
                                                 onChange={e => setAdmissionNo(e.target.value)}
                                                 onKeyDown={e => e.key === 'Enter' && enterPortal()}
@@ -164,116 +168,136 @@
                                         <button 
                                             onClick={enterPortal}
                                             disabled={loading}
-                                            className="w-full bg-slate-900 text-white p-4 rounded-lg font-semibold hover:bg-slate-800 active:bg-slate-950 transition-all disabled:opacity-50 shadow-lg shadow-slate-900/20"
+                                            className="w-full bg-slate-900 text-white py-5 rounded-xl font-bold hover:bg-slate-800 transition-all disabled:opacity-50 shadow-xl shadow-slate-900/20 uppercase tracking-widest text-xs"
                                         >
-                                            {loading ? 'Validating...' : 'Enter Student Portal'}
+                                            {loading ? 'Authenticating...' : 'Establish Connection'}
                                         </button>
                                     </div>
-                                    <div className="mt-10 pt-6 border-t border-slate-100 text-center">
-                                        <button onClick={() => setView('admin-login')} className="text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-widest">Faculty & Staff Portal</button>
+                                    <div className="mt-10 pt-8 border-t border-slate-50 text-center">
+                                        <button onClick={() => setView('admin-login')} className="text-[10px] font-bold text-slate-300 hover:text-slate-900 transition-colors uppercase tracking-widest">Staff Administration</button>
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {view === 'admin-login' && (
-                            <div className="max-w-md w-full mx-auto my-auto bg-white p-12 rounded-xl border border-slate-200 shadow-xl">
-                                <h2 className="serif-title text-3xl text-center mb-8">Faculty Authentication</h2>
+                            <div className="max-w-md w-full mx-auto my-auto bg-white p-10 rounded-2xl border border-slate-200 shadow-2xl">
+                                <h2 className="serif-title text-3xl text-center mb-8">Faculty Entry</h2>
                                 <div className="space-y-4">
                                     <input 
                                         type="password" 
-                                        className="w-full bg-slate-50 p-4 rounded-lg border border-slate-200 focus:border-slate-900 outline-none transition-all text-center font-bold"
-                                        placeholder="Institutional Key"
+                                        className="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 focus:border-slate-900 outline-none transition-all text-center font-bold tracking-widest"
+                                        placeholder="Enter Access Key"
                                         value={adminPassInput}
                                         onChange={e => setAdminPassInput(e.target.value)}
-                                        onKeyDown={e => e.key === 'Enter' && (adminPassInput === ADMIN_PASS ? setView('admin-dashboard') : alert('Authentication Failed'))}
+                                        onKeyDown={e => e.key === 'Enter' && (adminPassInput === ADMIN_PASS ? setView('admin-dashboard') : alert('Denied'))}
                                     />
-                                    <button onClick={() => adminPassInput === ADMIN_PASS ? setView('admin-dashboard') : alert('Authentication Failed')} className="w-full bg-slate-900 text-white p-4 rounded-lg font-bold">Verify Credentials</button>
-                                    <button onClick={() => setView('login')} className="w-full text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-4">Cancel Access</button>
+                                    <button onClick={() => adminPassInput === ADMIN_PASS ? setView('admin-dashboard') : alert('Denied')} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase text-[10px] tracking-widest">Authorize Access</button>
+                                    <button onClick={() => setView('login')} className="w-full text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-4">Return Home</button>
                                 </div>
                             </div>
                         )}
 
                         {view === 'dashboard' && (
-                            <div className="animate-in fade-in duration-700">
-                                <div className="mb-12 border-b border-slate-200 pb-8 flex justify-between items-end">
+                            <div className="animate-in fade-in duration-500">
+                                <div className="mb-12 flex justify-between items-end border-b border-slate-200 pb-8">
                                     <div>
-                                        <h2 className="serif-title text-5xl text-slate-900 leading-tight">Curriculum Dashboard</h2>
-                                        <p className="text-slate-500 mt-2 text-lg">Academic Year 2024/25 — <span className="font-semibold text-slate-900">Class {studentClass}</span></p>
+                                        <h2 className="serif-title text-5xl text-slate-900">Academic Hub</h2>
+                                        <p className="text-slate-400 mt-2 font-medium">Institutional Curriculum — Class {studentClass}</p>
                                     </div>
                                 </div>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    {/* Quiz Card */}
-                                    <div className="bg-white p-8 rounded-xl border border-slate-200 hover:border-slate-900 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between" onClick={() => setView('quiz')}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {/* Main Exam Card */}
+                                    <div className="bg-white p-8 rounded-2xl border border-slate-200 hover:border-slate-900 hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between h-64" onClick={() => setView('quiz')}>
                                         <div>
-                                            <div className="w-12 h-12 border border-slate-200 text-slate-900 rounded-lg flex items-center justify-center mb-8 group-hover:bg-slate-900 group-hover:text-white transition-colors">
-                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                                            <div className="w-10 h-10 bg-slate-100 text-slate-900 rounded-lg flex items-center justify-center mb-6 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                             </div>
-                                            <h3 className="text-xl font-bold text-slate-900 uppercase tracking-tight">Main Assessment</h3>
-                                            <p className="text-slate-500 text-sm mt-3 mb-8 leading-relaxed">Standard curriculum examination consisting of {filteredQuestions.length} rigorous items.</p>
+                                            <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Curriculum Assessment</h3>
+                                            <p className="text-slate-500 text-xs mt-3 leading-relaxed">Comprehensive examination for Tier {studentClass}.</p>
                                         </div>
-                                        <div className="pt-6 border-t border-slate-100 flex items-center text-slate-900 font-bold text-xs uppercase tracking-widest">
-                                            Begin Examination <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
+                                        <div className="flex items-center text-slate-900 font-bold text-[10px] uppercase tracking-widest">
+                                            Begin Exam <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
                                         </div>
                                     </div>
 
                                     {/* Module Cards */}
                                     {filteredModules.map(m => (
-                                        <div key={m.id} className="bg-white p-8 rounded-xl border border-slate-200 hover:border-slate-900 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between" onClick={() => { setActiveModule(m); setView('external'); }}>
+                                        <div key={m.id} className="bg-white p-8 rounded-2xl border border-slate-200 hover:border-slate-900 hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between h-64" onClick={() => { setActiveModule(m); setView('external'); }}>
                                             <div>
-                                                <div className="w-12 h-12 border border-slate-200 text-slate-900 rounded-lg flex items-center justify-center mb-8 group-hover:bg-slate-900 group-hover:text-white transition-colors">
-                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                                                <div className="w-10 h-10 bg-slate-100 text-slate-900 rounded-lg flex items-center justify-center mb-6 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
                                                 </div>
-                                                <h3 className="text-xl font-bold text-slate-900 uppercase tracking-tight">{m.name.split('.')[0]}</h3>
-                                                <p className="text-slate-500 text-sm mt-3 mb-8 leading-relaxed">Interactive educational unit designed for specific learning outcomes.</p>
+                                                <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight truncate">{m.name.split('.')[0]}</h3>
+                                                <p className="text-slate-500 text-xs mt-3 leading-relaxed">Interactive educational unit.</p>
                                             </div>
-                                            <div className="pt-6 border-t border-slate-100 flex items-center text-slate-900 font-bold text-xs uppercase tracking-widest">
+                                            <div className="flex items-center text-slate-900 font-bold text-[10px] uppercase tracking-widest">
                                                 Launch Module <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
                                             </div>
                                         </div>
                                     ))}
 
                                     {(filteredQuestions.length === 0 && filteredModules.length === 0) && (
-                                        <div className="col-span-full py-24 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
-                                            <p className="text-slate-400 font-medium italic">No curriculum units are currently assigned to Class {studentClass}.</p>
+                                        <div className="col-span-full py-20 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
+                                            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No active content for Level {studentClass}</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
 
-                        {view === 'quiz' && <QuizEngine questions={filteredQuestions} admissionNo={admissionNo} studentClass={studentClass} onComplete={() => setView('success')} onBack={() => setView('dashboard')} />}
+                        {view === 'quiz' && (
+                            <QuizEngine 
+                                questions={filteredQuestions} 
+                                admissionNo={admissionNo} 
+                                studentClass={studentClass} 
+                                onComplete={() => setView('success')} 
+                                onBack={() => setView('dashboard')} 
+                            />
+                        )}
 
                         {view === 'external' && activeModule && (
-                            <div className="fixed inset-0 z-[100] bg-slate-50 flex flex-col animate-in slide-in-from-bottom duration-500">
-                                <div className="p-4 bg-white border-b border-slate-200 flex justify-between items-center px-8 shadow-sm">
+                            <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col animate-in fade-in duration-300">
+                                {/* Persistent Back Navigation for Modules */}
+                                <div className="p-4 bg-white/5 backdrop-blur-md border-b border-white/10 flex justify-between items-center px-6 md:px-12">
                                     <div className="flex items-center gap-6">
-                                        <button onClick={() => setView('dashboard')} className="p-2 hover:bg-slate-100 rounded-lg transition-colors group">
-                                            <svg className="w-5 h-5 text-slate-600 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                                        <button 
+                                            onClick={() => setView('dashboard')} 
+                                            className="flex items-center gap-3 px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all group"
+                                        >
+                                            <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest">Back to Dashboard</span>
                                         </button>
-                                        <div className="h-6 w-px bg-slate-200"></div>
-                                        <div>
-                                            <h2 className="font-bold text-slate-900 uppercase tracking-tight text-sm">{activeModule.name}</h2>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Interactive Unit • Class {activeModule.targetClass}</p>
+                                        <div className="h-4 w-px bg-white/20 hidden sm:block"></div>
+                                        <div className="hidden sm:block">
+                                            <h2 className="text-xs font-bold text-white uppercase tracking-widest">{activeModule.name}</h2>
+                                            <p className="text-[8px] text-white/40 font-bold uppercase">Active Interactive Session</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => setView('dashboard')} className="bg-red-50 text-red-600 px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-red-100 transition-colors">Terminate Session</button>
+                                    <button 
+                                        onClick={() => setView('dashboard')}
+                                        className="text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest"
+                                    >
+                                        Terminate Module
+                                    </button>
                                 </div>
-                                <div className="flex-1 bg-white mx-auto w-full max-w-6xl my-6 border border-slate-200 rounded-xl overflow-hidden shadow-2xl">
-                                    <iframe srcDoc={activeModule.html} className="w-full h-full" sandbox="allow-scripts" />
+                                <div className="flex-1 p-2 md:p-6 bg-slate-900">
+                                    <div className="w-full h-full bg-white rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                                        <iframe srcDoc={activeModule.html} className="w-full h-full border-none" sandbox="allow-scripts" title="Academic Module" />
+                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {view === 'success' && (
-                            <div className="max-w-xl mx-auto my-auto text-center bg-white p-16 rounded-xl border border-slate-200 shadow-2xl">
-                                <div className="w-20 h-20 border-4 border-slate-900 text-slate-900 rounded-full flex items-center justify-center mx-auto mb-10">
-                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                            <div className="max-w-xl mx-auto my-auto text-center bg-white p-12 rounded-3xl border border-slate-200 shadow-2xl">
+                                <div className="w-16 h-16 border-4 border-slate-900 text-slate-900 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                                 </div>
-                                <h2 className="serif-title text-4xl mb-4">Submission Finalized</h2>
-                                <p className="text-slate-500 text-lg mb-12">Examination for Class {studentClass} has been recorded successfully. Please notify your proctor before exiting.</p>
-                                <button onClick={() => {setView('login'); setAdmissionNo('');}} className="w-full bg-slate-900 text-white py-5 rounded-lg font-bold shadow-xl tracking-widest uppercase text-xs">Return to Main Entry</button>
+                                <h2 className="serif-title text-4xl mb-4 text-slate-900">Submission Recorded</h2>
+                                <p className="text-slate-500 text-sm font-medium mb-10 leading-relaxed">Level {studentClass} assessment for <span className="font-bold text-slate-900">{admissionNo.toUpperCase()}</span> has been finalized. Academic proctors have been notified.</p>
+                                <button onClick={() => setView('login')} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg uppercase text-[10px] tracking-widest">Close Portal Session</button>
                             </div>
                         )}
 
@@ -302,44 +326,64 @@
             };
 
             const q = questions[idx];
-            if(!q) return <div className="text-center py-24 italic text-slate-400">Loading curriculum unit...</div>;
+            if(!q) return <div className="text-center py-20 font-bold text-slate-300 uppercase text-xs tracking-widest">Curriculum empty...</div>;
 
             return (
-                <div className="max-w-3xl mx-auto w-full">
-                    <div className="mb-8 flex justify-between items-center">
-                        <button onClick={onBack} className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-colors group">
+                <div className="max-w-3xl mx-auto w-full animate-in fade-in duration-500">
+                    {/* Header with Back Option for Students */}
+                    <div className="mb-8 flex justify-between items-center px-2">
+                        <button 
+                            onClick={onBack} 
+                            className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-all group"
+                        >
                             <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                            Exit to Dashboard
+                            Back to Dashboard
                         </button>
                         <div className="text-right">
-                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progress</p>
-                             <p className="text-sm font-bold text-slate-900">{idx + 1} of {questions.length}</p>
+                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Item {idx + 1} of {questions.length}</p>
                         </div>
                     </div>
 
-                    <div className="bg-white p-12 rounded-xl border border-slate-200 shadow-xl">
-                        <div className="w-full h-1 bg-slate-100 rounded-full mb-12 overflow-hidden">
-                            <div className="h-full bg-slate-900 transition-all duration-500" style={{width: `${((idx+1)/questions.length)*100}%`}}></div>
+                    <div className="bg-white p-8 md:p-12 rounded-3xl border border-slate-200 shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-50">
+                            <div className="h-full bg-slate-900 transition-all duration-700 ease-out" style={{width: `${((idx+1)/questions.length)*100}%`}}></div>
                         </div>
                         
-                        <h2 className="serif-title text-3xl mb-12 text-slate-900 leading-snug">{q.text}</h2>
+                        <h2 className="serif-title text-2xl md:text-3xl mb-12 text-slate-900 leading-tight">{q.text}</h2>
                         
                         <div className="space-y-3">
                             {q.type === 'mcq' ? (q.options || []).map((o, i) => (
-                                <button key={i} onClick={() => setAns({...ans, [idx]: o})} className={`w-full p-5 text-left rounded-lg border transition-all font-medium flex items-center ${ans[idx] === o ? 'border-slate-900 bg-slate-50 text-slate-900' : 'border-slate-200 bg-white hover:border-slate-400'}`}>
-                                    <span className={`w-6 h-6 rounded border mr-4 flex items-center justify-center text-[10px] font-bold ${ans[idx] === o ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>{String.fromCharCode(65+i)}</span> 
+                                <button 
+                                    key={i} 
+                                    onClick={() => setAns({...ans, [idx]: o})} 
+                                    className={`w-full p-5 text-left rounded-xl border-2 transition-all font-bold text-sm flex items-center group ${ans[idx] === o ? 'border-slate-900 bg-slate-50 text-slate-900 shadow-sm' : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'}`}
+                                >
+                                    <span className={`w-8 h-8 rounded-lg border-2 mr-5 flex items-center justify-center text-[11px] font-black transition-colors ${ans[idx] === o ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-100 text-slate-300 group-hover:border-slate-300'}`}>
+                                        {String.fromCharCode(65+i)}
+                                    </span> 
                                     {o}
                                 </button>
                             )) : (
-                                <input className="w-full p-6 border border-slate-200 rounded-lg focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none text-xl font-medium bg-slate-50 transition-all" placeholder="Enter academic response..." value={ans[idx]||''} onChange={e => setAns({...ans, [idx]: e.target.value})} />
+                                <input 
+                                    className="w-full p-6 border-2 border-slate-100 rounded-2xl focus:border-slate-900 outline-none text-xl font-bold bg-slate-50 transition-all uppercase placeholder:text-slate-200" 
+                                    placeholder="Type answer here..." 
+                                    value={ans[idx]||''} 
+                                    onChange={e => setAns({...ans, [idx]: e.target.value})} 
+                                />
                             )}
                         </div>
 
-                        <div className="flex justify-between mt-16 pt-8 border-t border-slate-100">
-                            <button disabled={idx===0} onClick={() => setIdx(idx-1)} className="text-slate-400 font-bold text-xs uppercase tracking-widest disabled:opacity-0 hover:text-slate-900 transition-colors">Previous Item</button>
+                        <div className="flex justify-between mt-16 pt-10 border-t border-slate-50">
+                            <button 
+                                disabled={idx===0} 
+                                onClick={() => setIdx(idx-1)} 
+                                className="text-slate-300 font-black text-[10px] uppercase tracking-widest disabled:opacity-0 hover:text-slate-900 transition-colors"
+                            >
+                                Previous
+                            </button>
                             {idx === questions.length - 1 ? 
-                                <button onClick={finish} className="bg-slate-900 text-white px-10 py-4 rounded-lg font-bold shadow-lg shadow-slate-900/10 uppercase text-xs tracking-[0.2em] hover:bg-slate-800">Submit Examination</button> :
-                                <button onClick={() => setIdx(idx+1)} className="bg-slate-900 text-white px-10 py-4 rounded-lg font-bold hover:bg-slate-800 transition-all uppercase text-xs tracking-[0.2em]">Next Item →</button>
+                                <button onClick={finish} className="bg-slate-900 text-white px-10 py-5 rounded-xl font-bold shadow-xl shadow-slate-900/20 uppercase text-[10px] tracking-widest hover:scale-105 active:scale-95 transition-all">Submit Final Exam</button> :
+                                <button onClick={() => setIdx(idx+1)} className="bg-slate-900 text-white px-10 py-5 rounded-xl font-bold hover:scale-105 active:scale-95 transition-all uppercase text-[10px] tracking-widest">Next Question</button>
                             }
                         </div>
                     </div>
@@ -357,14 +401,14 @@
             const htmlRef = useRef();
 
             const saveQuestion = async () => {
-                if(!newQ.text || !newQ.correct) return alert("Fill all academic fields.");
+                if(!newQ.text || !newQ.correct) return alert("All fields required.");
                 const { db, collection, addDoc } = window.FB;
                 await addDoc(collection(db, 'questions'), {...newQ, options: newQ.options.filter(o => o.trim())});
                 setNewQ({ ...newQ, text: '', options: ['', '', '', ''], correct: '' });
             };
 
             const del = async (col, id) => {
-                if(confirm('Confirm permanent deletion of record?')) await window.FB.deleteDoc(window.FB.doc(window.FB.db, col, id));
+                if(confirm('Archive this record permanently?')) await window.FB.deleteDoc(window.FB.doc(window.FB.db, col, id));
             };
 
             const importRoster = (e) => {
@@ -378,7 +422,7 @@
                         const [adm, cls] = lines[i].split(',');
                         if (adm && cls) await addDoc(collection(db, 'roster'), { admissionNo: adm.trim().toUpperCase(), studentClass: cls.trim() });
                     }
-                    alert("Institutional Roster Synced");
+                    alert("Roster Database Updated");
                 };
                 reader.readAsText(file);
             };
@@ -393,35 +437,35 @@
                         targetClass: uploadClass,
                         addedAt: Date.now()
                     });
-                    alert("Educational Module Assigned to Class " + uploadClass);
+                    alert("Module assigned to Class " + uploadClass);
                 };
                 reader.readAsText(file);
             };
 
             return (
-                <div className="max-w-6xl mx-auto w-full space-y-8 animate-in fade-in duration-500">
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div className="flex bg-slate-50 p-1 rounded-lg w-full md:w-auto overflow-x-auto">
+                <div className="max-w-6xl mx-auto w-full space-y-8 animate-in fade-in duration-500 pb-12">
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="flex bg-slate-50 p-1 rounded-xl w-full md:w-auto">
                             {['results', 'students', 'curriculum', 'modules'].map(t => (
-                                <button key={t} onClick={() => setTab(t)} className={`px-6 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${tab === t ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}>{t}</button>
+                                <button key={t} onClick={() => setTab(t)} className={`flex-1 md:px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${tab === t ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}>{t}</button>
                             ))}
                         </div>
-                        <button onClick={onBack} className="text-[10px] font-bold text-slate-400 hover:text-red-600 uppercase tracking-widest border-l border-slate-100 pl-6">Exit Faculty Panel</button>
+                        <button onClick={onBack} className="text-[10px] font-black text-slate-300 hover:text-red-600 uppercase tracking-widest px-4">Logout</button>
                     </div>
 
                     {tab === 'results' && (
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                             <table className="w-full text-left">
-                                <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 border-b border-slate-200 uppercase tracking-[0.2em]">
-                                    <tr><th className="p-6">Student Credential</th><th className="p-6 text-center">Class</th><th className="p-6 text-center">Score Metric</th><th className="p-6 text-right">Completion Date</th></tr>
+                                <thead className="bg-slate-50 text-[10px] font-black text-slate-400 border-b border-slate-200 uppercase tracking-widest">
+                                    <tr><th className="p-6">Credential</th><th className="p-6 text-center">Class</th><th className="p-6 text-center">Performance</th><th className="p-6 text-right">Date</th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-sm">
                                     {submissions.sort((a,b)=>b.completedAt-a.completedAt).map((s, i) => (
-                                        <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="p-6 font-semibold text-slate-900">{s.admissionNo.toUpperCase()}</td>
-                                            <td className="p-6 text-center"><span className="px-3 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-tighter">Class {s.studentClass}</span></td>
-                                            <td className="p-6 text-center font-bold text-slate-900">{s.score}</td>
-                                            <td className="p-6 text-right text-slate-400 font-medium">{new Date(s.completedAt).toLocaleDateString()}</td>
+                                        <tr key={i} className="hover:bg-slate-50/50 transition-colors font-medium">
+                                            <td className="p-6 text-slate-900 font-bold">{s.admissionNo.toUpperCase()}</td>
+                                            <td className="p-6 text-center"><span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-md text-[9px] font-black">CLASS {s.studentClass}</span></td>
+                                            <td className="p-6 text-center text-slate-900 font-black">{s.score}</td>
+                                            <td className="p-6 text-right text-slate-400">{new Date(s.completedAt).toLocaleDateString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -431,27 +475,27 @@
 
                     {tab === 'students' && (
                         <div className="space-y-6">
-                            <div className="bg-slate-900 p-10 rounded-xl text-white flex justify-between items-center shadow-xl shadow-slate-900/10">
+                            <div className="bg-slate-900 p-10 rounded-3xl text-white flex flex-col md:flex-row justify-between items-center gap-6">
                                 <div>
-                                    <h3 className="serif-title text-3xl">Registrar's Office</h3>
-                                    <p className="opacity-60 text-xs font-medium tracking-wide mt-1">Bulk manage student class assignments via CSV import.</p>
+                                    <h3 className="serif-title text-3xl">Registrar Database</h3>
+                                    <p className="opacity-50 text-[10px] font-bold uppercase tracking-widest mt-2">Upload CSV (AdmissionNo, Class)</p>
                                 </div>
-                                <div className="flex gap-4">
+                                <div className="flex gap-4 w-full md:w-auto">
                                     <input type="file" ref={rosterRef} className="hidden" onChange={importRoster} />
-                                    <button onClick={() => rosterRef.current.click()} className="bg-white text-slate-900 px-8 py-3 rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-colors">Synchronize Roster</button>
+                                    <button onClick={() => rosterRef.current.click()} className="flex-1 bg-white text-slate-900 px-8 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-colors">Import Roster</button>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                                 <table className="w-full text-left">
-                                    <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 border-b border-slate-200 uppercase tracking-widest">
-                                        <tr><th className="p-6">Identity Tag</th><th className="p-6">Assigned Level</th><th className="p-6 text-right">Records Management</th></tr>
+                                    <thead className="bg-slate-50 text-[10px] font-black text-slate-400 border-b border-slate-200 uppercase tracking-widest">
+                                        <tr><th className="p-6">Admission No</th><th className="p-6">Level</th><th className="p-6 text-right">Action</th></tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-sm">
                                         {roster.map(r => (
                                             <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="p-6 font-semibold">{r.admissionNo}</td>
-                                                <td className="p-6 font-bold text-slate-900">Class {r.studentClass}</td>
-                                                <td className="p-6 text-right"><button onClick={() => del('roster', r.id)} className="text-red-400 hover:text-red-600 font-bold text-[10px] uppercase tracking-widest">Purge</button></td>
+                                                <td className="p-6 font-bold">{r.admissionNo}</td>
+                                                <td className="p-6 font-black text-slate-900">CLASS {r.studentClass}</td>
+                                                <td className="p-6 text-right"><button onClick={() => del('roster', r.id)} className="text-red-400 hover:text-red-600 font-black text-[10px] uppercase tracking-widest">Delete</button></td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -461,23 +505,22 @@
                     )}
 
                     {tab === 'curriculum' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             <div className="lg:col-span-2 space-y-6">
-                                <div className="flex gap-2 pb-4 overflow-x-auto border-b border-slate-100">
-                                    <button onClick={() => setQFilterClass('')} className={`px-4 py-2 rounded text-[10px] font-bold tracking-widest uppercase border transition-all ${qFilterClass === '' ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-400'}`}>All Tiers</button>
+                                <div className="flex gap-2 pb-4 overflow-x-auto">
+                                    <button onClick={() => setQFilterClass('')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${qFilterClass === '' ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-400'}`}>All Classes</button>
                                     {CLASS_OPTIONS.map(c => (
-                                        <button key={c} onClick={() => setQFilterClass(c)} className={`px-4 py-2 rounded text-[10px] font-bold tracking-widest uppercase border transition-all ${qFilterClass === c ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-400'}`}>Class {c}</button>
+                                        <button key={c} onClick={() => setQFilterClass(c)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${qFilterClass === c ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-400'}`}>Class {c}</button>
                                     ))}
                                 </div>
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     {questions.filter(q => !qFilterClass || q.targetClass === qFilterClass).map(q => (
-                                        <div key={q.id} className="bg-white p-6 rounded-lg border border-slate-200 flex justify-between items-start group hover:border-slate-400 transition-all">
+                                        <div key={q.id} className="bg-white p-6 rounded-2xl border border-slate-200 flex justify-between items-center group hover:border-slate-900 transition-all">
                                             <div>
-                                                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 border border-slate-100 px-2 py-0.5 rounded mb-3 inline-block">Tier {q.targetClass}</span>
-                                                <p className="font-semibold text-slate-800 leading-relaxed">{q.text}</p>
-                                                <p className="text-[10px] text-slate-400 mt-3 font-bold uppercase tracking-widest">Key: <span className="text-slate-900">{q.correct}</span></p>
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Level {q.targetClass} • {q.type.toUpperCase()}</span>
+                                                <p className="font-bold text-slate-800 text-sm leading-relaxed">{q.text}</p>
                                             </div>
-                                            <button onClick={() => del('questions', q.id)} className="text-red-300 hover:text-red-600 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => del('questions', q.id)} className="text-red-300 hover:text-red-600 p-2 opacity-0 group-hover:opacity-100 transition-all">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                             </button>
                                         </div>
@@ -485,32 +528,31 @@
                                 </div>
                             </div>
                             
-                            <div className="bg-white p-10 rounded-xl border border-slate-200 shadow-xl h-fit sticky top-28">
-                                <h3 className="serif-title text-2xl mb-8">Item Creation</h3>
-                                <div className="space-y-6">
+                            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-lg h-fit">
+                                <h3 className="serif-title text-2xl mb-8">Add Assessment</h3>
+                                <div className="space-y-5">
                                     <div>
-                                        <label className="text-[10px] font-bold uppercase text-slate-400 mb-2 block tracking-widest">Target Class Level</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block tracking-widest">Academic Level</label>
                                         <select 
-                                            className="w-full p-4 bg-slate-50 rounded border border-slate-200 focus:border-slate-900 outline-none text-xs font-bold cursor-pointer" 
+                                            className="w-full p-4 bg-slate-50 rounded-xl border-2 border-slate-50 focus:border-slate-900 outline-none text-xs font-bold transition-all" 
                                             value={newQ.targetClass} 
                                             onChange={e => setNewQ({...newQ, targetClass: e.target.value})}
                                         >
-                                            {CLASS_OPTIONS.map(opt => <option key={opt} value={opt}>Academic Level {opt}</option>)}
+                                            {CLASS_OPTIONS.map(opt => <option key={opt} value={opt}>Class {opt}</option>)}
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-bold uppercase text-slate-400 mb-2 block tracking-widest">Inquiry Text</label>
-                                        <textarea className="w-full p-4 bg-slate-50 rounded border border-slate-200 focus:border-slate-900 outline-none text-sm h-32 leading-relaxed" placeholder="Formal inquiry text..." value={newQ.text} onChange={e => setNewQ({...newQ, text: e.target.value})} />
+                                        <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block tracking-widest">Question Text</label>
+                                        <textarea className="w-full p-4 bg-slate-50 rounded-xl border-2 border-slate-50 focus:border-slate-900 outline-none text-sm h-28 font-medium" placeholder="Describe inquiry..." value={newQ.text} onChange={e => setNewQ({...newQ, text: e.target.value})} />
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => setNewQ({...newQ, type:'mcq'})} className={`flex-1 py-3 text-[10px] font-bold tracking-widest rounded border transition-all ${newQ.type==='mcq'?'bg-slate-900 border-slate-900 text-white shadow-lg':'bg-white text-slate-400'}`}>MCQ</button>
-                                        <button onClick={() => setNewQ({...newQ, type:'short'})} className={`flex-1 py-3 text-[10px] font-bold tracking-widest rounded border transition-all ${newQ.type==='short'?'bg-slate-900 border-slate-900 text-white shadow-lg':'bg-white text-slate-400'}`}>SHORT</button>
+                                        <button onClick={() => setNewQ({...newQ, type:'mcq'})} className={`flex-1 py-3 text-[10px] font-black tracking-widest rounded-xl transition-all ${newQ.type==='mcq'?'bg-slate-900 text-white shadow-lg':'bg-slate-100 text-slate-400'}`}>MCQ</button>
+                                        <button onClick={() => setNewQ({...newQ, type:'short'})} className={`flex-1 py-3 text-[10px] font-black tracking-widest rounded-xl transition-all ${newQ.type==='short'?'bg-slate-900 text-white shadow-lg':'bg-slate-100 text-slate-400'}`}>SHORT</button>
                                     </div>
                                     {newQ.type === 'mcq' && (
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-bold uppercase text-slate-400 mb-2 block tracking-widest">Academic Options</label>
                                             {newQ.options.map((o, i) => (
-                                                <input key={i} className="w-full p-3 bg-slate-50 rounded border border-slate-100 text-xs" placeholder={`Option ${String.fromCharCode(65+i)}`} value={o} onChange={e => {
+                                                <input key={i} className="w-full p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs font-bold" placeholder={`Option ${String.fromCharCode(65+i)}`} value={o} onChange={e => {
                                                     const copy = [...newQ.options];
                                                     copy[i] = e.target.value;
                                                     setNewQ({...newQ, options: copy});
@@ -518,51 +560,45 @@
                                             ))}
                                         </div>
                                     )}
-                                    <div>
-                                        <label className="text-[10px] font-bold uppercase text-slate-400 mb-2 block tracking-widest">Valid Response Key</label>
-                                        <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded text-sm font-bold text-slate-900" placeholder="Specify valid response..." value={newQ.correct} onChange={e => setNewQ({...newQ, correct: e.target.value})} />
-                                    </div>
-                                    <button onClick={saveQuestion} className="w-full bg-slate-900 text-white py-4 rounded font-bold shadow-xl shadow-slate-900/10 text-[10px] uppercase tracking-[0.2em] hover:bg-slate-800 transition-all">Archive Question</button>
+                                    <input className="w-full p-4 bg-slate-50 border-2 border-slate-50 focus:border-slate-900 rounded-xl text-xs font-black uppercase" placeholder="Correct Key" value={newQ.correct} onChange={e => setNewQ({...newQ, correct: e.target.value})} />
+                                    <button onClick={saveQuestion} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all">Assign to Class</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {tab === 'modules' && (
-                        <div className="bg-white p-12 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="bg-white p-12 rounded-3xl border border-slate-200 shadow-sm">
                             <div className="max-w-md mx-auto text-center space-y-8">
-                                <div className="w-20 h-20 border border-slate-200 text-slate-900 rounded-full flex items-center justify-center mx-auto shadow-sm">
-                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                <div className="w-20 h-20 bg-slate-50 text-slate-900 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="serif-title text-3xl">Module Integration</h3>
-                                    <p className="text-slate-400 text-sm italic">Assign complex interactive units to specific academic levels.</p>
+                                    <h3 className="serif-title text-3xl">Module Assignment</h3>
+                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Distribute Interactive HTML Resource</p>
                                 </div>
                                 <div className="space-y-4 pt-4">
-                                    <div className="text-left">
-                                        <label className="text-[10px] font-bold uppercase text-slate-400 mb-3 block text-center tracking-widest">Level Designation</label>
-                                        <select 
-                                            className="w-full p-4 bg-slate-50 rounded border border-slate-200 font-bold text-center text-xs outline-none transition-all cursor-pointer focus:border-slate-900" 
-                                            value={uploadClass} 
-                                            onChange={e => setUploadClass(e.target.value)}
-                                        >
-                                            {CLASS_OPTIONS.map(opt => <option key={opt} value={opt}>Academic Level {opt}</option>)}
-                                        </select>
-                                    </div>
-                                    <button onClick={() => htmlRef.current.click()} className="w-full bg-slate-900 text-white py-4 rounded font-bold shadow-lg hover:bg-slate-800 transition-all uppercase text-[10px] tracking-widest">Upload Resource (.html)</button>
+                                    <select 
+                                        className="w-full p-5 bg-slate-50 rounded-2xl border-2 border-slate-50 font-black text-center text-[10px] uppercase tracking-widest outline-none transition-all focus:border-slate-900" 
+                                        value={uploadClass} 
+                                        onChange={e => setUploadClass(e.target.value)}
+                                    >
+                                        {CLASS_OPTIONS.map(opt => <option key={opt} value={opt}>Academic Tier {opt}</option>)}
+                                    </select>
+                                    <button onClick={() => htmlRef.current.click()} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black shadow-xl hover:bg-slate-800 transition-all uppercase text-[10px] tracking-widest">Select Source File</button>
                                     <input type="file" ref={htmlRef} className="hidden" accept=".html" onChange={uploadHtml} />
                                 </div>
                             </div>
 
-                            <div className="mt-20 pt-12 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="mt-20 pt-12 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {modules.map(m => (
-                                    <div key={m.id} className="p-6 border border-slate-200 bg-slate-50 rounded flex justify-between items-center group hover:bg-white hover:shadow-lg transition-all">
+                                    <div key={m.id} className="p-5 border border-slate-100 bg-slate-50 rounded-2xl flex justify-between items-center group hover:bg-white hover:border-slate-900 transition-all">
                                         <div>
-                                            <span className="text-[8px] font-black bg-slate-900 text-white px-2 py-0.5 rounded mr-3 uppercase tracking-tighter">Level {m.targetClass}</span>
-                                            <span className="font-semibold text-slate-800 text-xs">{m.name.split('.')[0]}</span>
+                                            <span className="text-[8px] font-black bg-slate-200 text-slate-500 px-2 py-1 rounded-md mr-3 uppercase">TIER {m.targetClass}</span>
+                                            <span className="font-bold text-slate-800 text-xs truncate max-w-[120px] inline-block align-middle">{m.name}</span>
                                         </div>
-                                        <button onClick={() => del('modules', m.id)} className="text-red-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        <button onClick={() => del('modules', m.id)} className="text-red-300 hover:text-red-600 transition-all opacity-0 group-hover:opacity-100">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                     </div>
                                 ))}

@@ -11,6 +11,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -41,6 +42,7 @@
         const { useState, useEffect, useRef } = React;
 
         const ADMIN_PASS = "admin123";
+        const CLASS_OPTIONS = ["1", "2", "3", "4", "5", "6", "7"];
 
         function App() {
             const [view, setView] = useState('login');
@@ -69,7 +71,6 @@
                 });
             }, []);
 
-            // Filter data based on student's class
             const filteredQuestions = questions.filter(q => q.targetClass === studentClass);
             const filteredModules = modules.filter(m => m.targetClass === studentClass);
 
@@ -124,7 +125,7 @@
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block">Admission Number</label>
                                             <input 
                                                 className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white p-4 rounded-2xl outline-none font-bold text-lg transition-all text-center uppercase" 
-                                                placeholder="e.g. ADM-2024-001"
+                                                placeholder="e.g. ADM-001"
                                                 value={admissionNo}
                                                 onChange={e => setAdmissionNo(e.target.value)}
                                                 onKeyDown={e => e.key === 'Enter' && enterPortal()}
@@ -169,7 +170,6 @@
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {/* General Quiz Card */}
                                     <div className="bg-white p-8 rounded-[2rem] border-2 border-slate-100 hover:border-indigo-500 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between" onClick={() => setView('quiz')}>
                                         <div>
                                             <div className="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
@@ -183,7 +183,6 @@
                                         </div>
                                     </div>
 
-                                    {/* Custom Modules Cards */}
                                     {filteredModules.map(m => (
                                         <div key={m.id} className="bg-white p-8 rounded-[2rem] border-2 border-slate-100 hover:border-emerald-500 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between" onClick={() => { setActiveModule(m); setView('external'); }}>
                                             <div>
@@ -191,7 +190,7 @@
                                                     <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                 </div>
                                                 <h3 className="text-2xl font-bold text-slate-800">{m.name}</h3>
-                                                <p className="text-slate-400 text-sm mt-2 mb-6">Interactive module for {m.targetClass}.</p>
+                                                <p className="text-slate-400 text-sm mt-2 mb-6">Interactive module for Class {m.targetClass}.</p>
                                             </div>
                                             <div className="flex items-center text-emerald-600 font-bold text-sm">
                                                 Launch Module <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
@@ -214,7 +213,7 @@
                             <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in slide-in-from-bottom duration-500">
                                 <div className="p-4 bg-slate-900 text-white flex justify-between items-center px-8">
                                     <div className="flex items-center gap-4">
-                                        <span className="text-xs font-black bg-white/10 px-3 py-1 rounded-full uppercase">{activeModule.targetClass}</span>
+                                        <span className="text-xs font-black bg-white/10 px-3 py-1 rounded-full uppercase">Class {activeModule.targetClass}</span>
                                         <h2 className="font-bold">{activeModule.name}</h2>
                                     </div>
                                     <button onClick={() => setView('dashboard')} className="bg-red-500 px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-600 transition-colors">Exit Task</button>
@@ -229,7 +228,7 @@
                                     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                                 </div>
                                 <h2 className="text-4xl font-black mb-4">Submission Saved!</h2>
-                                <p className="text-slate-500 text-lg mb-10">Great job, {admissionNo}. Your results for <span className="font-bold text-slate-800">{studentClass}</span> have been sent to the teacher.</p>
+                                <p className="text-slate-500 text-lg mb-10">Great job, {admissionNo}. Your results for <span className="font-bold text-slate-800">Class {studentClass}</span> have been sent to the teacher.</p>
                                 <button onClick={() => {setView('login'); setAdmissionNo('');}} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold shadow-xl">Return to Login</button>
                             </div>
                         )}
@@ -292,19 +291,18 @@
 
         function AdminPanel({ submissions, questions, modules, roster }) {
             const [tab, setTab] = useState('results');
-            const [qClass, setQClass] = useState('');
-            const [newQ, setNewQ] = useState({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '', targetClass: '' });
-            const [uploadClass, setUploadClass] = useState('');
+            const [qFilterClass, setQFilterClass] = useState('');
+            const [newQ, setNewQ] = useState({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '', targetClass: '1' });
+            const [uploadClass, setUploadClass] = useState('1');
 
-            const csvRef = useRef();
             const rosterRef = useRef();
             const htmlRef = useRef();
 
             const saveQuestion = async () => {
-                if(!newQ.text || !newQ.targetClass || !newQ.correct) return alert("Fill Class, Question and Answer!");
+                if(!newQ.text || !newQ.correct) return alert("Fill Question and Answer!");
                 const { db, collection, addDoc } = window.FB;
                 await addDoc(collection(db, 'questions'), {...newQ, options: newQ.options.filter(o => o.trim())});
-                setNewQ({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '', targetClass: newQ.targetClass });
+                setNewQ({ ...newQ, text: '', options: ['', '', '', ''], correct: '' });
             };
 
             const del = async (col, id) => {
@@ -328,7 +326,6 @@
             };
 
             const uploadHtml = (e) => {
-                if(!uploadClass) return alert("Select a target class first!");
                 const file = e.target.files[0];
                 const reader = new FileReader();
                 reader.onload = async (ev) => {
@@ -338,7 +335,7 @@
                         targetClass: uploadClass,
                         addedAt: Date.now()
                     });
-                    alert("Module assigned to " + uploadClass);
+                    alert("Module assigned to Class " + uploadClass);
                 };
                 reader.readAsText(file);
             };
@@ -366,7 +363,7 @@
                                     {submissions.sort((a,b)=>b.completedAt-a.completedAt).map((s, i) => (
                                         <tr key={i} className="hover:bg-slate-50/50">
                                             <td className="p-6 font-bold">{s.admissionNo}</td>
-                                            <td className="p-6"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold">{s.studentClass}</span></td>
+                                            <td className="p-6"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold">Class {s.studentClass}</span></td>
                                             <td className="p-6 font-black text-indigo-700">{s.score}</td>
                                             <td className="p-6 text-slate-400">{new Date(s.completedAt).toLocaleDateString()}</td>
                                         </tr>
@@ -381,7 +378,7 @@
                             <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex justify-between items-center shadow-xl shadow-indigo-100">
                                 <div>
                                     <h3 className="text-2xl font-bold">Student Directory</h3>
-                                    <p className="opacity-80 text-sm">Manage class assignments and authentication.</p>
+                                    <p className="opacity-80 text-sm">Manage class assignments. CSV Format: AdmissionNo,Class</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <input type="file" ref={rosterRef} className="hidden" onChange={importRoster} />
@@ -397,7 +394,7 @@
                                         {roster.map(r => (
                                             <tr key={r.id} className="hover:bg-slate-50/50">
                                                 <td className="p-6 font-bold">{r.admissionNo}</td>
-                                                <td className="p-6 font-bold text-indigo-600">{r.studentClass}</td>
+                                                <td className="p-6 font-bold text-indigo-600">Class {r.studentClass}</td>
                                                 <td className="p-6"><button onClick={() => del('roster', r.id)} className="text-red-400 hover:text-red-600 font-bold">Delete</button></td>
                                             </tr>
                                         ))}
@@ -411,13 +408,12 @@
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             <div className="lg:col-span-2 space-y-4">
                                 <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-                                    {['', ...new Set(questions.map(q=>q.targetClass))].map(c => (
-                                        <button key={c} onClick={() => setQClass(c)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border-2 ${qClass === c ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-100 text-slate-400'}`}>
-                                            {c || 'All Classes'}
-                                        </button>
+                                    <button onClick={() => setQFilterClass('')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border-2 ${qFilterClass === '' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-100 text-slate-400'}`}>All Classes</button>
+                                    {CLASS_OPTIONS.map(c => (
+                                        <button key={c} onClick={() => setQFilterClass(c)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border-2 ${qFilterClass === c ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-100 text-slate-400'}`}>Class {c}</button>
                                     ))}
                                 </div>
-                                {questions.filter(q => !qClass || q.targetClass === qClass).map(q => (
+                                {questions.filter(q => !qFilterClass || q.targetClass === qFilterClass).map(q => (
                                     <div key={q.id} className="bg-white p-6 rounded-2xl border flex justify-between group hover:border-indigo-200 transition-all">
                                         <div>
                                             <span className="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded mb-2 inline-block">Class {q.targetClass}</span>
@@ -433,7 +429,13 @@
                                 <div className="space-y-4">
                                     <div>
                                         <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Target Class</label>
-                                        <input className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-indigo-100 outline-none text-sm font-bold" placeholder="e.g. 10-A" value={newQ.targetClass} onChange={e => setNewQ({...newQ, targetClass: e.target.value.toUpperCase()})} />
+                                        <select 
+                                            className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-indigo-100 outline-none text-sm font-bold cursor-pointer" 
+                                            value={newQ.targetClass} 
+                                            onChange={e => setNewQ({...newQ, targetClass: e.target.value})}
+                                        >
+                                            {CLASS_OPTIONS.map(opt => <option key={opt} value={opt}>Class {opt}</option>)}
+                                        </select>
                                     </div>
                                     <textarea className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-indigo-100 outline-none text-sm h-32" placeholder="Question Text..." value={newQ.text} onChange={e => setNewQ({...newQ, text: e.target.value})} />
                                     <div className="flex gap-2">
@@ -465,7 +467,16 @@
                                     <p className="text-slate-400 text-sm mt-2">Target a specific class with interactive HTML content.</p>
                                 </div>
                                 <div className="space-y-4">
-                                    <input className="w-full p-4 bg-slate-100 rounded-2xl font-bold text-center border-2 border-transparent focus:border-emerald-500 outline-none transition-all" placeholder="Enter Target Class (e.g. 10-A)" value={uploadClass} onChange={e => setUploadClass(e.target.value.toUpperCase())} />
+                                    <div className="text-left">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block text-center">Assign to Class</label>
+                                        <select 
+                                            className="w-full p-4 bg-slate-100 rounded-2xl font-bold text-center border-2 border-transparent focus:border-emerald-500 outline-none transition-all cursor-pointer" 
+                                            value={uploadClass} 
+                                            onChange={e => setUploadClass(e.target.value)}
+                                        >
+                                            {CLASS_OPTIONS.map(opt => <option key={opt} value={opt}>Class {opt}</option>)}
+                                        </select>
+                                    </div>
                                     <button onClick={() => htmlRef.current.click()} className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-emerald-700 transition-all">Select .HTML File</button>
                                     <input type="file" ref={htmlRef} className="hidden" accept=".html" onChange={uploadHtml} />
                                 </div>

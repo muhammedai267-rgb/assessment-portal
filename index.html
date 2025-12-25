@@ -272,12 +272,62 @@
             const [tab, setTab] = useState('results');
             const [newQ, setNewQ] = useState({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '' });
             const htmlRef = useRef();
+            const csvRef = useRef();
 
             const saveQ = async () => {
                 if(!newQ.text || !newQ.correct) return alert("Fill all fields");
                 const { db, collection, addDoc } = window.FB;
                 await addDoc(collection(db, 'questions'), {...newQ, options: newQ.options.filter(o => o.trim())});
                 setNewQ({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '' });
+            };
+
+            const downloadSampleCSV = () => {
+                const headers = "QuestionText,Type(mcq/short),Options(comma separated for MCQ),CorrectAnswer";
+                const sampleRow = "What is 2+2?,mcq,\"3,4,5,6\",4";
+                const csvContent = headers + "\n" + sampleRow;
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "sample_questions.csv";
+                a.click();
+            };
+
+            const importCSV = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    const content = ev.target.result;
+                    const lines = content.split('\n');
+                    const { db, collection, addDoc } = window.FB;
+                    let count = 0;
+
+                    // Skip header row
+                    for(let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+                        
+                        // Simple CSV parser for quoted strings
+                        const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+                        if (parts && parts.length >= 4) {
+                            const text = parts[0].replace(/"/g, '');
+                            const type = parts[1].replace(/"/g, '').toLowerCase();
+                            const options = parts[2].replace(/"/g, '').split(',').map(o => o.trim());
+                            const correct = parts[3].replace(/"/g, '');
+                            
+                            await addDoc(collection(db, 'questions'), {
+                                text,
+                                type: type === 'mcq' ? 'mcq' : 'short',
+                                options: type === 'mcq' ? options : [],
+                                correct
+                            });
+                            count++;
+                        }
+                    }
+                    alert(`Successfully imported ${count} questions!`);
+                };
+                reader.readAsText(file);
             };
 
             const uploadModule = (e) => {
@@ -306,7 +356,7 @@
                                 <button key={t} onClick={() => setTab(t)} className={`px-6 py-2 rounded-xl text-sm font-bold capitalize transition-all ${tab === t ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-800'}`}>{t}</button>
                             ))}
                         </div>
-                        <button onClick={exportCSV} className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700">Download CSV</button>
+                        <button onClick={exportCSV} className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700">Download Results</button>
                     </div>
 
                     {tab === 'results' && (
@@ -333,6 +383,14 @@
                     {tab === 'questions' && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div className="lg:col-span-2 space-y-4">
+                                <div className="bg-indigo-50 p-4 rounded-2xl flex justify-between items-center border border-indigo-100 mb-2">
+                                    <div className="text-indigo-800 text-xs font-bold uppercase tracking-tight">Bulk Import Questions</div>
+                                    <div className="flex gap-2">
+                                        <button onClick={downloadSampleCSV} className="text-[10px] bg-white text-indigo-600 px-3 py-1.5 rounded-lg border border-indigo-200 font-bold hover:bg-indigo-600 hover:text-white transition-all">Download Sample</button>
+                                        <button onClick={() => csvRef.current.click()} className="text-[10px] bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-700 transition-all">Upload Spreadsheet</button>
+                                        <input type="file" ref={csvRef} accept=".csv" className="hidden" onChange={importCSV} />
+                                    </div>
+                                </div>
                                 {questions.map(q => (
                                     <div key={q.id} className="bg-white p-6 rounded-2xl border flex justify-between group hover:border-indigo-200 transition-all shadow-sm">
                                         <div>

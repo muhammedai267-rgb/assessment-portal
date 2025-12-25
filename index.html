@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Academic Management System</title>
+    <title>Academic Portal | Institutional Management</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif&display=swap');
-        :root { --brand: #6366f1; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-        .serif-font { font-family: 'Instrument Serif', serif; }
-        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(226, 232, 240, 0.8); }
-        .btn-primary { background: var(--brand); transition: all 0.2s; }
-        .btn-primary:hover { background: #4f46e5; transform: translateY(-1px); }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        :root { --brand: #4f46e5; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; color: #1a1a1a; }
+        .serif { font-family: 'Instrument Serif', serif; }
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.05); }
+        .input-field { background: #f3f4f6; border: 2px solid transparent; transition: all 0.2s; }
+        .input-field:focus { border-color: var(--brand); background: white; outline: none; }
+        .btn-primary { background: var(--brand); color: white; transition: all 0.2s; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .tab-active { border-bottom: 2px solid var(--brand); color: var(--brand); }
     </style>
 </head>
 <body>
@@ -32,17 +33,17 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'academic-portal-v2';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'academic-master-v3';
 
         window.FB = { auth, db, collection, doc, setDoc, getDoc, onSnapshot, addDoc, deleteDoc, updateDoc, query, signInAnonymously, onAuthStateChanged, signInWithCustomToken, appId };
     </script>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
+        const { useState, useEffect, useRef } = React;
 
         function App() {
             const [user, setUser] = useState(null);
-            const [view, setView] = useState('login'); // login, dashboard, quiz, admin-auth, admin-dashboard, success
+            const [view, setView] = useState('login'); 
             const [admissionNo, setAdmissionNo] = useState('');
             const [studentProfile, setStudentProfile] = useState(null);
             
@@ -52,14 +53,12 @@
             const [submissions, setSubmissions] = useState([]);
             const [roster, setRoster] = useState([]);
             
-            // UI State
             const [activeModule, setActiveModule] = useState(null);
-            const [loading, setLoading] = useState(false);
             const [adminKey, setAdminKey] = useState('');
 
             const { auth, db, appId } = window.FB;
 
-            // Auth Initialization
+            // 1. Mandatory Auth Logic
             useEffect(() => {
                 const initAuth = async () => {
                     try {
@@ -68,149 +67,109 @@
                         } else {
                             await window.FB.signInAnonymously(auth);
                         }
-                    } catch (e) { console.error("Auth Error", e); }
+                    } catch (e) { console.error("Auth Fail", e); }
                 };
                 initAuth();
                 return window.FB.onAuthStateChanged(auth, setUser);
             }, []);
 
-            // Real-time Data Sync
+            // 2. Mandatory Firestore Sync logic
             useEffect(() => {
                 if (!user) return;
                 
-                const paths = ['questions', 'modules', 'submissions', 'roster'];
+                const collections = ['questions', 'modules', 'submissions', 'roster'];
                 const setters = [setQuestions, setModules, setSubmissions, setRoster];
                 
-                const unsubscribers = paths.map((path, idx) => {
-                    const q = window.FB.collection(db, 'artifacts', appId, 'public', 'data', path);
-                    return window.FB.onSnapshot(q, (snapshot) => {
-                        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        setters[idx](data);
-                    }, (err) => console.error(`Sync error [${path}]:`, err));
+                const unsubscribers = collections.map((name, idx) => {
+                    const q = window.FB.collection(db, 'artifacts', appId, 'public', 'data', name);
+                    return window.FB.onSnapshot(q, (snap) => {
+                        setters[idx](snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                    }, (err) => console.error(name, err));
                 });
 
-                return () => unsubscribers.forEach(unsub => unsub());
+                return () => unsubscribers.forEach(u => u());
             }, [user]);
 
-            const handleStudentLogin = () => {
-                const match = roster.find(s => s.admissionNo.toUpperCase() === admissionNo.toUpperCase());
-                if (match) {
-                    setStudentProfile(match);
+            const handleLogin = () => {
+                const found = roster.find(s => s.admissionNo.toUpperCase() === admissionNo.toUpperCase());
+                if (found) {
+                    setStudentProfile(found);
                     setView('dashboard');
                 } else {
-                    alert("ID not found in current roster.");
+                    alert("ID not found in roster. Please contact Faculty.");
                 }
             };
 
-            const logout = () => {
-                setView('login');
-                setAdmissionNo('');
-                setStudentProfile(null);
-                setActiveModule(null);
-            };
-
             return (
-                <div className="min-h-screen text-slate-900">
-                    {/* Navigation */}
-                    <nav className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-40">
+                <div className="min-h-screen">
+                    <nav className="h-16 glass flex items-center justify-between px-6 sticky top-0 z-50">
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">A</div>
-                            <span className="font-bold tracking-tight text-sm uppercase">Portal v3.0</span>
+                            <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center text-white font-bold">A</div>
+                            <span className="font-bold tracking-tighter uppercase text-sm">Academic Cloud</span>
                         </div>
                         {studentProfile && (
-                            <div className="flex items-center gap-4">
-                                <span className="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded text-slate-500 uppercase tracking-wider">Class {studentProfile.studentClass}</span>
-                                <button onClick={logout} className="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors">LOGOUT</button>
-                            </div>
+                            <button onClick={() => { setView('login'); setStudentProfile(null); }} className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Logout</button>
                         )}
                     </nav>
 
-                    <main className="max-w-7xl mx-auto p-4 md:p-8">
+                    <main className="max-w-6xl mx-auto p-6">
                         {view === 'login' && (
-                            <div className="max-w-md mx-auto mt-20 space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                                <div className="text-center">
-                                    <h1 className="serif-font text-6xl mb-2">Academic Entry</h1>
-                                    <p className="text-slate-400 text-sm font-medium">Verify credentials to access learning modules</p>
-                                </div>
-                                <div className="glass-card p-8 rounded-3xl shadow-xl space-y-4">
+                            <div className="max-w-md mx-auto mt-20 text-center space-y-8">
+                                <h1 className="serif text-6xl">Welcome Back</h1>
+                                <div className="glass p-8 rounded-3xl shadow-2xl space-y-4">
                                     <input 
-                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-center text-xl font-bold uppercase tracking-widest outline-none focus:ring-2 ring-indigo-500/20"
+                                        className="w-full input-field p-4 rounded-xl text-center text-xl font-bold uppercase tracking-widest"
                                         placeholder="STUDENT ID"
                                         value={admissionNo}
                                         onChange={e => setAdmissionNo(e.target.value)}
-                                        onKeyDown={e => e.key === 'Enter' && handleStudentLogin()}
+                                        onKeyDown={e => e.key === 'Enter' && handleLogin()}
                                     />
-                                    <button onClick={handleStudentLogin} className="w-full btn-primary text-white py-4 rounded-xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-indigo-500/20">Access Dashboard</button>
-                                    <button onClick={() => setView('admin-auth')} className="w-full text-[10px] font-bold text-slate-300 hover:text-slate-500 uppercase tracking-widest">Faculty Personnel Only</button>
+                                    <button onClick={handleLogin} className="w-full btn-primary py-4 rounded-xl font-bold uppercase text-xs tracking-widest">Enter Portal</button>
+                                    <button onClick={() => setView('admin-auth')} className="text-[10px] text-slate-300 font-bold uppercase">Faculty Access</button>
                                 </div>
                             </div>
                         )}
 
                         {view === 'admin-auth' && (
-                            <div className="max-w-md mx-auto mt-20 space-y-6">
-                                <div className="glass-card p-8 rounded-3xl shadow-xl text-center">
-                                    <h2 className="serif-font text-3xl mb-6">Faculty Security</h2>
-                                    <input 
-                                        type="password"
-                                        className="w-full bg-slate-50 border p-4 rounded-xl text-center font-bold mb-4"
-                                        placeholder="MASTER KEY"
-                                        value={adminKey}
-                                        onChange={e => setAdminKey(e.target.value)}
-                                    />
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button onClick={() => setView('login')} className="bg-slate-100 py-3 rounded-xl font-bold text-[10px] uppercase">Back</button>
-                                        <button onClick={() => adminKey === 'admin123' ? setView('admin-dashboard') : alert('Invalid Key')} className="btn-primary text-white py-3 rounded-xl font-bold text-[10px] uppercase">Verify</button>
-                                    </div>
+                            <div className="max-w-md mx-auto mt-20 text-center glass p-8 rounded-3xl space-y-4">
+                                <h2 className="serif text-3xl">Faculty Security</h2>
+                                <input type="password" placeholder="KEY" className="w-full input-field p-4 rounded-xl text-center" onChange={e => setAdminKey(e.target.value)} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button onClick={() => setView('login')} className="bg-slate-100 py-3 rounded-xl text-[10px] font-bold uppercase">Back</button>
+                                    <button onClick={() => adminKey === 'admin123' ? setView('admin') : alert('Wrong Key')} className="btn-primary py-3 rounded-xl text-[10px] font-bold uppercase">Confirm</button>
                                 </div>
                             </div>
                         )}
 
-                        {view === 'dashboard' && (
-                            <div className="space-y-8 animate-in fade-in">
-                                <header className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-200 pb-8 gap-4">
-                                    <div>
-                                        <h2 className="serif-font text-5xl mb-2">Hello, {studentProfile.admissionNo}</h2>
-                                        <p className="text-slate-500 font-medium">Your curriculum for Level {studentProfile.studentClass} is ready.</p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <div className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold border border-indigo-100 flex items-center gap-2">
-                                            <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
-                                            Active Session
-                                        </div>
-                                    </div>
+                        {view === 'dashboard' && studentProfile && (
+                            <div className="space-y-10">
+                                <header>
+                                    <h2 className="serif text-5xl">Dashboard</h2>
+                                    <p className="text-slate-400 font-medium">Class Level {studentProfile.studentClass}</p>
                                 </header>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {/* Primary Assessment */}
-                                    <div 
-                                        onClick={() => setView('quiz')}
-                                        className="glass-card p-8 rounded-3xl border-2 border-slate-100 hover:border-indigo-500 transition-all cursor-pointer group flex flex-col justify-between h-64"
-                                    >
-                                        <div>
-                                            <div className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/30">
-                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                            </div>
-                                            <h3 className="text-xl font-bold tracking-tight">Main Assessment</h3>
-                                            <p className="text-slate-400 text-xs mt-2 leading-relaxed font-medium uppercase tracking-wide">Timed Exam Tier {studentProfile.studentClass}</p>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div onClick={() => setView('quiz')} className="glass p-8 rounded-3xl border-2 border-transparent hover:border-indigo-500 cursor-pointer transition-all h-60 flex flex-col justify-between group">
+                                        <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                         </div>
-                                        <div className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">Begin Examination →</div>
+                                        <div>
+                                            <h3 className="font-bold text-xl">Main Assessment</h3>
+                                            <p className="text-xs text-slate-400 uppercase font-bold tracking-widest mt-1">Class Tier {studentProfile.studentClass}</p>
+                                        </div>
+                                        <span className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-2 transition-transform">Start Now →</span>
                                     </div>
 
-                                    {/* Dynamic Modules */}
                                     {modules.filter(m => m.targetClass === studentProfile.studentClass).map(m => (
-                                        <div 
-                                            key={m.id}
-                                            onClick={() => { setActiveModule(m); setView('external-module'); }}
-                                            className="glass-card p-8 rounded-3xl border-2 border-slate-100 hover:border-blue-500 transition-all cursor-pointer group flex flex-col justify-between h-64"
-                                        >
-                                            <div>
-                                                <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-500/30">
-                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                                                </div>
-                                                <h3 className="text-xl font-bold tracking-tight truncate">{m.name}</h3>
-                                                <p className="text-slate-400 text-xs mt-2 font-medium uppercase tracking-wide">Interactive Learning Module</p>
+                                        <div key={m.id} onClick={() => { setActiveModule(m); setView('module'); }} className="glass p-8 rounded-3xl border-2 border-transparent hover:border-blue-500 cursor-pointer transition-all h-60 flex flex-col justify-between group">
+                                            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                                             </div>
-                                            <div className="text-blue-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">Launch Module →</div>
+                                            <div>
+                                                <h3 className="font-bold text-xl truncate">{m.name}</h3>
+                                                <p className="text-xs text-slate-400 uppercase font-bold tracking-widest mt-1">Learning Resource</p>
+                                            </div>
+                                            <span className="text-blue-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-2 transition-transform">Launch →</span>
                                         </div>
                                     ))}
                                 </div>
@@ -218,57 +177,30 @@
                         )}
 
                         {view === 'quiz' && (
-                            <QuizEngine 
+                            <QuizPlayer 
                                 questions={questions.filter(q => q.targetClass === studentProfile.studentClass)} 
-                                admissionNo={admissionNo} 
+                                admissionNo={admissionNo}
                                 studentClass={studentProfile.studentClass}
                                 appId={appId}
-                                onComplete={() => setView('success')}
                                 onExit={() => setView('dashboard')}
                             />
                         )}
 
-                        {view === 'external-module' && activeModule && (
-                            <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
-                                <div className="h-14 bg-white flex items-center justify-between px-6 border-b">
-                                    <button onClick={() => setView('dashboard')} className="flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
-                                        Exit Module
-                                    </button>
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">{activeModule.name}</div>
-                                    <div className="w-20"></div>
+                        {view === 'module' && activeModule && (
+                            <div className="fixed inset-0 bg-white z-[60] flex flex-col">
+                                <div className="h-14 border-b flex items-center justify-between px-6">
+                                    <button onClick={() => setView('dashboard')} className="text-[10px] font-black uppercase tracking-widest text-slate-400">Exit Module</button>
+                                    <span className="font-bold text-sm">{activeModule.name}</span>
+                                    <div className="w-10"></div>
                                 </div>
-                                <div className="flex-1 bg-white overflow-hidden">
-                                    <iframe 
-                                        srcDoc={activeModule.html} 
-                                        className="w-full h-full border-none"
-                                        title="Module Viewer"
-                                        sandbox="allow-scripts allow-popups allow-modals"
-                                    />
-                                </div>
+                                <iframe srcDoc={activeModule.html} className="flex-1 w-full border-none" />
                             </div>
                         )}
 
-                        {view === 'success' && (
-                            <div className="max-w-xl mx-auto mt-20 text-center animate-in zoom-in-95 duration-500">
-                                <div className="glass-card p-12 rounded-[3rem] shadow-2xl relative">
-                                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center text-3xl shadow-xl shadow-emerald-500/40">✓</div>
-                                    <h2 className="serif-font text-5xl mb-4 mt-6">Assessment Completed</h2>
-                                    <p className="text-slate-400 font-medium text-sm mb-10 leading-relaxed uppercase tracking-wider">Your responses have been securely logged in the institutional database.</p>
-                                    <button onClick={logout} className="w-full btn-primary text-white py-4 rounded-2xl font-bold uppercase text-xs tracking-widest shadow-lg shadow-indigo-500/20">Sign Out Safely</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {view === 'admin-dashboard' && (
+                        {view === 'admin' && (
                             <AdminPanel 
-                                submissions={submissions} 
-                                questions={questions} 
-                                modules={modules} 
-                                roster={roster}
-                                appId={appId}
-                                db={db}
-                                onExit={() => setView('login')} 
+                                roster={roster} questions={questions} modules={modules} submissions={submissions}
+                                db={db} appId={appId} onExit={() => setView('login')} 
                             />
                         )}
                     </main>
@@ -276,101 +208,60 @@
             );
         }
 
-        function QuizEngine({ questions, admissionNo, studentClass, appId, onComplete, onExit }) {
+        function QuizPlayer({ questions, admissionNo, studentClass, appId, onExit }) {
             const [idx, setIdx] = useState(0);
             const [answers, setAnswers] = useState({});
-            const startTimestamp = useRef(Date.now());
+            const [finished, setFinished] = useState(false);
 
-            const handleFinish = async () => {
+            if (questions.length === 0) return <div className="text-center py-20">No questions for your class.</div>;
+
+            const submit = async () => {
                 const results = questions.map((q, i) => ({
-                    question: q.text,
-                    answer: answers[i] || 'No Answer',
-                    isCorrect: (answers[i] || '').toString().toLowerCase().trim() === (q.correct || '').toString().toLowerCase().trim()
+                    q: q.text,
+                    a: answers[i] || '',
+                    correct: (answers[i] || '').toString().toLowerCase().trim() === (q.correct || '').toString().toLowerCase().trim()
                 }));
-                const scoreCount = results.filter(r => r.isCorrect).length;
+                const score = results.filter(r => r.correct).length;
                 
-                try {
-                    await window.FB.addDoc(window.FB.collection(window.FB.db, 'artifacts', appId, 'public', 'data', 'submissions'), {
-                        admissionNo,
-                        studentClass,
-                        score: `${scoreCount}/${questions.length}`,
-                        percentage: Math.round((scoreCount / questions.length) * 100),
-                        timestamp: Date.now(),
-                        durationSeconds: Math.round((Date.now() - startTimestamp.current) / 1000),
-                        results
-                    });
-                    onComplete();
-                } catch (e) { alert("Submission error: " + e.message); }
+                await window.FB.addDoc(window.FB.collection(window.FB.db, 'artifacts', appId, 'public', 'data', 'submissions'), {
+                    admissionNo, studentClass, score: `${score}/${questions.length}`,
+                    percentage: (score/questions.length)*100, timestamp: Date.now()
+                });
+                setFinished(true);
             };
 
+            if (finished) return (
+                <div className="max-w-md mx-auto mt-20 text-center glass p-12 rounded-[3rem] space-y-6">
+                    <h2 className="serif text-5xl">Done!</h2>
+                    <p className="text-slate-400 uppercase font-bold tracking-widest text-xs">Submission recorded successfully.</p>
+                    <button onClick={onExit} className="w-full btn-primary py-4 rounded-2xl font-bold uppercase text-[10px]">Return to Home</button>
+                </div>
+            );
+
             const q = questions[idx];
-            if (!q) return <div className="text-center py-20 text-slate-300 font-bold uppercase tracking-widest">No Assessment Available</div>;
-
             return (
-                <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4">
-                    <div className="flex justify-between items-center mb-8 px-2">
-                        <button onClick={onExit} className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors flex items-center gap-2">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M15 19l-7-7 7-7" /></svg>
-                            Back to Dashboard
-                        </button>
-                        <div className="px-3 py-1 bg-slate-900 text-white rounded text-[10px] font-black tracking-widest">
-                            STEP {idx + 1} OF {questions.length}
-                        </div>
+                <div className="max-w-2xl mx-auto space-y-6">
+                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <span>Question {idx+1} / {questions.length}</span>
+                        <button onClick={onExit}>Quit</button>
                     </div>
-
-                    <div className="glass-card p-12 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-100">
-                            <div className="h-full bg-indigo-600 transition-all duration-500" style={{width: `${((idx + 1) / questions.length) * 100}%`}}></div>
-                        </div>
-                        
-                        <h2 className="serif-font text-4xl mb-12 text-slate-900 leading-tight">{q.text}</h2>
-                        
+                    <div className="glass p-10 rounded-[2.5rem] shadow-xl space-y-8">
+                        <h2 className="serif text-4xl">{q.text}</h2>
                         <div className="space-y-3">
-                            {q.type === 'mcq' ? (
-                                (q.options || []).map((opt, i) => (
-                                    <button 
-                                        key={i} 
-                                        onClick={() => setAnswers({...answers, [idx]: opt})}
-                                        className={`w-full p-5 text-left rounded-2xl border-2 transition-all font-semibold text-sm flex items-center gap-4 ${answers[idx] === opt ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-50 hover:bg-slate-50 text-slate-600'}`}
-                                    >
-                                        <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black ${answers[idx] === opt ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-400'}`}>
-                                            {String.fromCharCode(65 + i)}
-                                        </span>
-                                        {opt}
-                                    </button>
-                                ))
-                            ) : (
-                                <input 
-                                    className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xl font-bold outline-none focus:border-indigo-500 transition-colors"
-                                    placeholder="Input Response..."
-                                    value={answers[idx] || ''}
-                                    onChange={e => setAnswers({...answers, [idx]: e.target.value})}
-                                />
+                            {q.type === 'mcq' ? (q.options || []).map((o, i) => (
+                                <button key={i} onClick={() => setAnswers({...answers, [idx]: o})} className={`w-full p-5 rounded-2xl border-2 text-left font-bold transition-all ${answers[idx] === o ? 'border-indigo-600 bg-indigo-50' : 'border-slate-50 hover:bg-slate-50'}`}>
+                                    {o}
+                                </button>
+                            )) : (
+                                <input className="w-full p-5 input-field rounded-2xl text-xl font-bold" placeholder="Type answer..." value={answers[idx] || ''} onChange={e => setAnswers({...answers, [idx]: e.target.value})} />
                             )}
                         </div>
-
-                        <div className="flex justify-between items-center mt-16 pt-10 border-t border-slate-100">
-                            <button 
-                                disabled={idx === 0} 
-                                onClick={() => setIdx(idx - 1)}
-                                className="text-[10px] font-black text-slate-300 uppercase tracking-widest disabled:opacity-0 hover:text-slate-600 transition-colors"
-                            >
-                                Previous
-                            </button>
+                        <div className="flex justify-between pt-6 border-t">
+                            <button disabled={idx === 0} onClick={() => setIdx(idx-1)} className="text-[10px] font-bold uppercase text-slate-300">Prev</button>
                             {idx === questions.length - 1 ? (
-                                <button 
-                                    onClick={handleFinish}
-                                    className="btn-primary text-white px-10 py-5 rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-xl shadow-indigo-500/20"
-                                >
-                                    Finish Assessment
-                                </button>
+                                <button onClick={submit} className="btn-primary px-8 py-3 rounded-xl font-bold uppercase text-[10px]">Submit</button>
                             ) : (
-                                <button 
-                                    onClick={() => setIdx(idx + 1)}
-                                    className="bg-slate-900 text-white px-10 py-5 rounded-2xl font-bold uppercase text-[10px] tracking-widest"
-                                >
-                                    Next Step
-                                </button>
+                                <button onClick={() => setIdx(idx+1)} className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold uppercase text-[10px]">Next</button>
                             )}
                         </div>
                     </div>
@@ -378,220 +269,134 @@
             );
         }
 
-        function AdminPanel({ submissions, questions, modules, roster, appId, db, onExit }) {
-            const [activeTab, setActiveTab] = useState('results');
-            const [newQ, setNewQ] = useState({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '', targetClass: '1' });
-            const [newStudent, setNewStudent] = useState({ admissionNo: '', studentClass: '1' });
-            
-            const deleteDoc = async (coll, id) => {
-                if(confirm("Permanently delete this item?")) {
-                    await window.FB.deleteDoc(window.FB.doc(db, 'artifacts', appId, 'public', 'data', coll, id));
-                }
+        function AdminPanel({ roster, questions, modules, submissions, db, appId, onExit }) {
+            const [tab, setTab] = useState('roster');
+            const [newQ, setNewQ] = useState({ text: '', type: 'mcq', correct: '', targetClass: '1', options: ['', '', '', ''] });
+            const [newS, setNewS] = useState({ admissionNo: '', studentClass: '1' });
+
+            const saveQ = async () => {
+                await window.FB.addDoc(window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'questions'), { ...newQ, options: newQ.options.filter(o => o.trim()) });
+                setNewQ({ text: '', type: 'mcq', correct: '', targetClass: newQ.targetClass, options: ['', '', '', ''] });
             };
 
-            const addQuestion = async () => {
-                if(!newQ.text || !newQ.correct) return alert("Fields missing");
-                await window.FB.addDoc(window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'questions'), {
-                    ...newQ,
-                    options: newQ.options.filter(o => o.trim())
-                });
-                setNewQ({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '', targetClass: newQ.targetClass });
+            const saveS = async () => {
+                await window.FB.addDoc(window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'roster'), newS);
+                setNewS({ admissionNo: '', studentClass: '1' });
             };
 
-            const handleModuleUpload = async (e) => {
-                const file = e.target.files[0];
-                if(!file) return;
-                const targetClass = prompt("Target Class (1-7):", "1");
-                const reader = new FileReader();
-                reader.onload = async (ev) => {
-                    await window.FB.addDoc(window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'modules'), {
-                        name: file.name.replace('.html', ''),
-                        html: ev.target.result,
-                        targetClass: targetClass || '1',
-                        uploadedAt: Date.now()
-                    });
-                };
-                reader.readAsText(file);
+            const del = async (col, id) => {
+                if(confirm('Delete permanently?')) await window.FB.deleteDoc(window.FB.doc(db, 'artifacts', appId, 'public', 'data', col, id));
             };
 
             return (
-                <div className="space-y-8 animate-in fade-in">
-                    <header className="flex flex-col md:flex-row md:items-center justify-between border-b pb-6 gap-6">
-                        <div>
-                            <h2 className="serif-font text-5xl">Institutional Controls</h2>
-                            <p className="text-slate-500 font-medium">Global academic configuration and records access.</p>
+                <div className="space-y-8">
+                    <div className="flex justify-between items-center">
+                        <h2 className="serif text-5xl">Institutional Control</h2>
+                        <button onClick={onExit} className="text-red-500 font-bold text-[10px] uppercase">Exit Admin</button>
+                    </div>
+
+                    <div className="flex gap-6 border-b text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        {['roster', 'curriculum', 'modules', 'results'].map(t => (
+                            <button key={t} onClick={() => setTab(t)} className={`pb-4 ${tab === t ? 'tab-active' : ''}`}>{t}</button>
+                        ))}
+                    </div>
+
+                    {tab === 'roster' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-sm uppercase">Active Roster</h3>
+                                {roster.map(s => (
+                                    <div key={s.id} className="glass p-4 rounded-xl flex justify-between items-center">
+                                        <span><b>{s.admissionNo}</b> (Class {s.studentClass})</span>
+                                        <button onClick={() => del('roster', s.id)} className="text-red-400">Del</button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="glass p-8 rounded-3xl space-y-4">
+                                <h3 className="font-bold">Add Student</h3>
+                                <input className="w-full p-4 input-field rounded-xl font-bold uppercase" placeholder="ID" value={newS.admissionNo} onChange={e => setNewS({...newS, admissionNo: e.target.value.toUpperCase()})} />
+                                <select className="w-full p-4 input-field rounded-xl" value={newS.studentClass} onChange={e => setNewS({...newS, studentClass: e.target.value})}>
+                                    {[1,2,3,4,5,6,7].map(c => <option key={c} value={c}>Class {c}</option>)}
+                                </select>
+                                <button onClick={saveS} className="w-full btn-primary py-4 rounded-xl font-bold text-[10px] uppercase">Enroll</button>
+                            </div>
                         </div>
-                        <div className="flex bg-white p-1 rounded-2xl border border-slate-200 overflow-x-auto whitespace-nowrap">
-                            {['results', 'students', 'curriculum', 'modules'].map(tab => (
-                                <button 
-                                    key={tab} 
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-400 hover:bg-slate-50'}`}
-                                >
-                                    {tab}
-                                </button>
+                    )}
+
+                    {tab === 'curriculum' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            <div className="space-y-4">
+                                {questions.map(q => (
+                                    <div key={q.id} className="glass p-4 rounded-xl flex justify-between items-center">
+                                        <span className="text-sm"><b>C{q.targetClass}:</b> {q.text}</span>
+                                        <button onClick={() => del('questions', q.id)} className="text-red-400">Del</button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="glass p-8 rounded-3xl space-y-4">
+                                <h3 className="font-bold">New Item</h3>
+                                <select className="w-full p-3 input-field rounded-xl text-xs" value={newQ.targetClass} onChange={e => setNewQ({...newQ, targetClass: e.target.value})}>
+                                    {[1,2,3,4,5,6,7].map(c => <option key={c} value={c}>Class {c}</option>)}
+                                </select>
+                                <textarea className="w-full p-4 input-field rounded-xl text-sm" placeholder="Question..." value={newQ.text} onChange={e => setNewQ({...newQ, text: e.target.value})} />
+                                {newQ.options.map((o, i) => (
+                                    <input key={i} className="w-full p-2 input-field rounded text-xs" placeholder={`Option ${i+1}`} value={o} onChange={e => {
+                                        const ops = [...newQ.options];
+                                        ops[i] = e.target.value;
+                                        setNewQ({...newQ, options: ops});
+                                    }} />
+                                ))}
+                                <input className="w-full p-4 input-field rounded-xl text-xs font-bold border-indigo-200" placeholder="ANSWER" value={newQ.correct} onChange={e => setNewQ({...newQ, correct: e.target.value})} />
+                                <button onClick={saveQ} className="w-full btn-primary py-4 rounded-xl font-bold text-[10px] uppercase">Save Question</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === 'modules' && (
+                        <div className="grid grid-cols-3 gap-6">
+                            <div className="glass p-10 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center text-center space-y-4">
+                                <p className="text-xs font-bold text-slate-400">Upload HTML Module</p>
+                                <input type="file" id="mod-up" className="hidden" accept=".html" onChange={async (e) => {
+                                    const file = e.target.files[0];
+                                    if(!file) return;
+                                    const tc = prompt("Target Class?", "1");
+                                    const reader = new FileReader();
+                                    reader.onload = async (ev) => {
+                                        await window.FB.addDoc(window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'modules'), {
+                                            name: file.name, html: ev.target.result, targetClass: tc || '1'
+                                        });
+                                    };
+                                    reader.readAsText(file);
+                                }} />
+                                <button onClick={() => document.getElementById('mod-up').click()} className="btn-primary px-6 py-2 rounded-xl text-[10px] font-bold uppercase">Browse</button>
+                            </div>
+                            {modules.map(m => (
+                                <div key={m.id} className="glass p-6 rounded-3xl relative">
+                                    <button onClick={() => del('modules', m.id)} className="absolute top-2 right-2 text-red-300 text-[8px] font-black">DEL</button>
+                                    <h4 className="font-bold truncate">{m.name}</h4>
+                                    <p className="text-[10px] font-black text-indigo-500 uppercase mt-2">Class {m.targetClass}</p>
+                                </div>
                             ))}
                         </div>
-                    </header>
+                    )}
 
-                    {activeTab === 'results' && (
-                        <div className="glass-card rounded-[2rem] overflow-hidden">
+                    {tab === 'results' && (
+                        <div className="glass rounded-3xl overflow-hidden">
                             <table className="w-full text-left">
-                                <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b">
-                                    <tr>
-                                        <th className="p-6">Student ID</th>
-                                        <th className="p-6">Class</th>
-                                        <th className="p-6">Score</th>
-                                        <th className="p-6">Time Taken</th>
-                                        <th className="p-6 text-right">Date</th>
-                                    </tr>
+                                <thead className="bg-slate-50 text-[10px] font-black uppercase text-slate-400 border-b">
+                                    <tr><th className="p-4">Student</th><th className="p-4">Class</th><th className="p-4">Score</th><th className="p-4">Date</th></tr>
                                 </thead>
-                                <tbody className="divide-y text-sm">
-                                    {submissions.map((s, idx) => (
-                                        <tr key={idx} className="hover:bg-slate-50/50">
-                                            <td className="p-6 font-bold">{s.admissionNo}</td>
-                                            <td className="p-6"><span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold uppercase">{s.studentClass}</span></td>
-                                            <td className="p-6">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-indigo-600" style={{width: `${s.percentage}%`}}></div>
-                                                    </div>
-                                                    <span className="font-black text-indigo-600">{s.score}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-6 text-slate-400">{Math.floor(s.durationSeconds / 60)}m {s.durationSeconds % 60}s</td>
-                                            <td className="p-6 text-right font-medium text-slate-400">{new Date(s.timestamp).toLocaleDateString()}</td>
+                                <tbody className="text-sm">
+                                    {submissions.map(s => (
+                                        <tr key={s.id} className="border-b">
+                                            <td className="p-4 font-bold">{s.admissionNo}</td>
+                                            <td className="p-4">L{s.studentClass}</td>
+                                            <td className="p-4 text-indigo-600 font-black">{s.score}</td>
+                                            <td className="p-4 text-slate-400">{new Date(s.timestamp).toLocaleDateString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
-                    )}
-
-                    {activeTab === 'students' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 glass-card rounded-[2rem] p-8">
-                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6">Student Roster</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                    {roster.map(s => (
-                                        <div key={s.id} className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between group">
-                                            <div>
-                                                <div className="font-bold text-sm">{s.admissionNo}</div>
-                                                <div className="text-[10px] font-black text-slate-300 uppercase">Class {s.studentClass}</div>
-                                            </div>
-                                            <button onClick={() => deleteDoc('roster', s.id)} className="text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="glass-card rounded-[2rem] p-8 space-y-4">
-                                <h3 className="serif-font text-2xl">Quick Enroll</h3>
-                                <input 
-                                    className="w-full bg-slate-50 p-4 rounded-xl font-bold uppercase"
-                                    placeholder="Admission No"
-                                    value={newStudent.admissionNo}
-                                    onChange={e => setNewStudent({...newStudent, admissionNo: e.target.value.toUpperCase()})}
-                                />
-                                <select 
-                                    className="w-full bg-slate-50 p-4 rounded-xl font-bold"
-                                    value={newStudent.studentClass}
-                                    onChange={e => setNewStudent({...newStudent, studentClass: e.target.value})}
-                                >
-                                    {[1,2,3,4,5,6,7].map(c => <option key={c} value={c}>Class Level {c}</option>)}
-                                </select>
-                                <button 
-                                    onClick={async () => {
-                                        if(!newStudent.admissionNo) return;
-                                        await window.FB.addDoc(window.FB.collection(db, 'artifacts', appId, 'public', 'data', 'roster'), newStudent);
-                                        setNewStudent({ admissionNo: '', studentClass: '1' });
-                                    }}
-                                    className="w-full btn-primary text-white py-4 rounded-xl font-bold uppercase text-[10px]"
-                                >
-                                    Add Student
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'curriculum' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 space-y-4">
-                                {questions.map(q => (
-                                    <div key={q.id} className="glass-card p-6 rounded-3xl flex justify-between items-center group">
-                                        <div className="flex gap-4 items-center">
-                                            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-[10px] font-black text-slate-400 uppercase">C{q.targetClass}</div>
-                                            <div>
-                                                <p className="font-bold text-slate-800">{q.text}</p>
-                                                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">Ans: {q.correct}</p>
-                                            </div>
-                                        </div>
-                                        <button onClick={() => deleteDoc('questions', q.id)} className="text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">Delete</button>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="glass-card p-8 rounded-[2rem] space-y-4 h-fit">
-                                <h3 className="serif-font text-2xl">Compose Item</h3>
-                                <select 
-                                    className="w-full bg-slate-50 p-3 rounded-xl text-xs font-bold"
-                                    value={newQ.targetClass}
-                                    onChange={e => setNewQ({...newQ, targetClass: e.target.value})}
-                                >
-                                    {[1,2,3,4,5,6,7].map(c => <option key={c} value={c}>Assign Class {c}</option>)}
-                                </select>
-                                <textarea 
-                                    className="w-full bg-slate-50 p-4 rounded-xl text-sm min-h-[100px]"
-                                    placeholder="Question Text..."
-                                    value={newQ.text}
-                                    onChange={e => setNewQ({...newQ, text: e.target.value})}
-                                />
-                                <div className="space-y-2">
-                                    <span className="text-[10px] font-black uppercase text-slate-300">MCQ Options (Optional)</span>
-                                    {newQ.options.map((opt, i) => (
-                                        <input key={i} className="w-full p-2 bg-slate-50 rounded text-xs" placeholder={`Option ${i+1}`} value={opt} onChange={e => {
-                                            const opts = [...newQ.options];
-                                            opts[i] = e.target.value;
-                                            setNewQ({...newQ, options: opts});
-                                        }} />
-                                    ))}
-                                </div>
-                                <input className="w-full p-4 bg-slate-50 rounded-xl text-xs font-black border-2 border-indigo-100" placeholder="VERIFIED ANSWER" value={newQ.correct} onChange={e => setNewQ({...newQ, correct: e.target.value})} />
-                                <button onClick={addQuestion} className="w-full btn-primary text-white py-4 rounded-xl font-bold text-[10px] uppercase">Publish to Database</button>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'modules' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div className="glass-card p-8 rounded-[2rem] flex flex-col items-center justify-center border-2 border-dashed border-slate-200 text-center space-y-4 min-h-[250px]">
-                                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
-                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                                </div>
-                                <div>
-                                    <h4 className="font-bold">New HTML Module</h4>
-                                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mt-1">Upload self-contained file</p>
-                                </div>
-                                <input type="file" className="hidden" id="module-up" accept=".html" onChange={handleModuleUpload} />
-                                <button onClick={() => document.getElementById('module-up').click()} className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase">Choose File</button>
-                            </div>
-
-                            {modules.map(m => (
-                                <div key={m.id} className="glass-card p-8 rounded-[2rem] group relative">
-                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all">
-                                        <button onClick={() => deleteDoc('modules', m.id)} className="text-red-400 hover:text-red-600">Delete</button>
-                                    </div>
-                                    <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-                                    </div>
-                                    <h4 className="font-bold truncate">{m.name}</h4>
-                                    <p className="text-[10px] font-black text-slate-300 uppercase mt-1 tracking-widest">Class {m.targetClass}</p>
-                                    <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                                        <span className="text-[9px] font-bold text-slate-400">{new Date(m.uploadedAt).toLocaleDateString()}</span>
-                                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                                    </div>
-                                </div>
-                            ))}
                         </div>
                     )}
                 </div>
